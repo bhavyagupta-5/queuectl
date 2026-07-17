@@ -1,0 +1,16 @@
+{
+  "name": "queuectl",
+  "version": "1.0.0",
+  "description": "Production-grade CLI-based background job queue system",
+  "type": "module",
+  "main": "src/cli.js",
+  "bin": {
+    "queuectl": "./bin/queuectl.js"
+  },
+  "scripts": {
+    "test": "node tests/run_tests.js"
+  },
+  "dependencies": {
+    "sqlite3": "^5.1.7"
+  }
+}
