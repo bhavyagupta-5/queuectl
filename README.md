@@ -177,4 +177,4 @@ Run the automated test suite to verify all required scenarios:
 npm test
 ```
 ## Demo video link 
-`https://drive.google.com/file/d/1gNRdomqoSnjxkF9aIEL1AvxQGb1-8d6b/view?usp=sharing`
+[Google website](https://drive.google.com/file/d/1gNRdomqoSnjxkF9aIEL1AvxQGb1-8d6b/view?usp=sharing).
