@@ -113,6 +113,17 @@ queuectl config set backoff-base 2
 queuectl config set default-timeout 10
 ```
 
+### 7. Start Web Dashboard
+Start the clean monitoring Web UI:
+```bash
+# Start dashboard on port 3000 (default)
+queuectl dashboard
+
+# Start dashboard on a custom port
+queuectl dashboard --port 8080
+```
+Open your browser to `http://localhost:3000` to view active workers, status charts, execution history, read job execution logs, trigger retries for dead jobs, and enqueue new jobs directly from the UI.
+
 ---
 
 ## 🏗️ Architecture & Internals

@@ -1,7 +1,7 @@
 {
   "name": "queuectl",
   "version": "1.0.0",
-  "description": "Production-grade CLI-based background job queue system",
+  "description": "Background task execution queue system CLI",
   "type": "module",
   "main": "src/cli.js",
   "bin": {
@@ -11,6 +11,7 @@
     "test": "node tests/run_tests.js"
   },
   "dependencies": {
+    "express": "^4.19.2",
     "sqlite3": "^5.1.7"
   }
 }

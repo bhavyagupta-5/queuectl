@@ -57,14 +57,14 @@ async function runTests() {
   console.log(`🧪 RUNNING QUEUECTL AUTOMATED TEST SUITE`);
   console.log(`======================================================${colors.reset}\n`);
 
-  // Initialize DB and clear
+
   await initDb();
   await clearAll();
   await initDb();
 
   let failedTests = 0;
 
-  // TEST 1: Basic Job Completes Successfully
+  
   try {
     console.log(`${colors.bright}[Test 1] Basic Job Completes Successfully...${colors.reset}`);
     await enqueueJob({
@@ -77,7 +77,7 @@ async function runTests() {
 
     const worker = startWorkerProcess('worker-test-1');
     
-    // Poll DB up to 5s
+
     let success = false;
     for (let i = 0; i < 50; i++) {
       await sleep(100);
@@ -101,10 +101,10 @@ async function runTests() {
     failedTests++;
   }
 
-  // TEST 2: Failed Job Retries with Backoff and Moves to DLQ
+
   try {
     console.log(`${colors.bright}[Test 2] Failed Job Retries with Backoff & Moves to DLQ...${colors.reset}`);
-    // Set max-retries to 2 for this job to speed up test
+   
     await enqueueJob({
       id: 'test-retry-dlq',
       command: 'nonexistentcommand1234',
@@ -113,12 +113,11 @@ async function runTests() {
       timeout: 0
     });
     
-    // Set config values
-    await setConfig('backoff-base', '1.5'); // Low backoff base for faster tests
+    
+    await setConfig('backoff-base', '1.5'); 
 
     const worker = startWorkerProcess('worker-test-2');
 
-    // Wait and verify job fails and transitions to retry, then dead
     let reachedDeadState = false;
     let attemptsCounted = 0;
 
@@ -147,7 +146,6 @@ async function runTests() {
     failedTests++;
   }
 
-  // TEST 3: Multiple Workers Process Jobs in Parallel Without Overlap (Locking)
   try {
     console.log(`${colors.bright}[Test 3] Concurrency & Locking: 3 Workers, 6 Jobs...${colors.reset}`);
     await clearAll();
@@ -164,12 +162,12 @@ async function runTests() {
       });
     }
 
-    // Start 3 workers
+
     const w1 = startWorkerProcess('w-1');
     const w2 = startWorkerProcess('w-2');
     const w3 = startWorkerProcess('w-3');
 
-    // Wait for all to finish
+
     let allFinished = false;
     let jobRecords = [];
 
@@ -197,11 +195,11 @@ async function runTests() {
     await stopWorkerProcess(w2);
     await stopWorkerProcess(w3);
 
-    // Verify worker assignments
+
     const workerAssignments = jobRecords.map(j => j.worker_id);
     const uniqueWorkers = new Set(workerAssignments.filter(Boolean));
     
-    // We want to make sure jobs were processed by multiple workers and no double processing happened
+   
     const hasMultipleWorkers = uniqueWorkers.size > 1;
     const noDuplicates = jobRecords.every(j => j.attempts === 1);
 
@@ -216,19 +214,18 @@ async function runTests() {
     failedTests++;
   }
 
-  // TEST 4: Timeout Handling (Bonus Feature Verification)
   try {
     console.log(`${colors.bright}[Test 4] Job Timeout Handling (Bonus)...${colors.reset}`);
     await clearAll();
     await initDb();
 
-    // Enqueue a job with a 1 second timeout that runs for 5 seconds
+    
     await enqueueJob({
       id: 'test-timeout',
       command: 'sleep 5',
-      max_retries: 1, // Make sure it moves to DLQ immediately after 1 failure
+      max_retries: 1, 
       priority: 0,
-      timeout: 1 // 1 second timeout!
+      timeout: 1 
     });
 
     const worker = startWorkerProcess('worker-test-4');
@@ -259,13 +256,12 @@ async function runTests() {
     failedTests++;
   }
 
-  // TEST 5: Job Persistence Across Worker Restarts
+  
   try {
     console.log(`${colors.bright}[Test 5] Job Persistence Across Worker Restarts...${colors.reset}`);
     await clearAll();
     await initDb();
 
-    // Enqueue job with workers offline
     await enqueueJob({
       id: 'test-persistence',
       command: 'echo "Job run after restart"',
@@ -274,11 +270,10 @@ async function runTests() {
       timeout: 0
     });
 
-    // Check that job is stored as pending
+
     let job = await getJob('test-persistence');
     const isPendingInitially = job && job.state === 'pending';
 
-    // Now start the worker to consume it
     const worker = startWorkerProcess('worker-test-5');
     
     let isCompleted = false;
@@ -304,7 +299,7 @@ async function runTests() {
     failedTests++;
   }
 
-  // Clean up any remaining worker process just in case
+
   spawnedPids.forEach(pid => {
     try {
       process.kill(pid, 'SIGKILL');

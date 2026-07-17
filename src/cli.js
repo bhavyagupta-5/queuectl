@@ -12,6 +12,7 @@ import {
   getJobSummary 
 } from './db.js';
 import { setConfig, getConfig } from './config.js';
+import { startDashboard } from './dashboard.js';
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 
@@ -40,10 +41,11 @@ ${colors.bright}Commands:${colors.reset}
   ${colors.green}worker start --count <n>${colors.reset}    Start one or more workers (default count is 1)
   ${colors.green}worker stop${colors.reset}                 Stop running workers gracefully
   ${colors.green}status${colors.reset}                      Show summary of job states and active workers
-  ${colors.green}list [--state <state>]${colors.reset}     List jobs (optional filter by state: pending, processing, completed, failed, dead)
+  ${colors.green}list [--state <state>]${colors.reset}     List jobs (optional filter by state)
   ${colors.green}dlq list${colors.reset}                    List all jobs in the Dead Letter Queue
   ${colors.green}dlq retry <id|all>${colors.reset}          Retry a dead job by ID, or retry all dead jobs
   ${colors.green}config set <key> <val>${colors.reset}      Set configuration parameter (max-retries, backoff-base, default-timeout)
+  ${colors.green}dashboard [--port <n>]${colors.reset}      Start the web UI dashboard (default port is 3000)
 
 ${colors.bright}Job JSON Fields:${colors.reset}
   ${colors.yellow}id${colors.reset} (string, optional)        Unique identifier for the job
@@ -331,6 +333,16 @@ async function run() {
           process.exit(1);
         }
         break;
+      }
+
+      case 'dashboard': {
+        let port = 3000;
+        const portIdx = args.indexOf('--port');
+        if (portIdx !== -1 && args[portIdx + 1]) {
+          port = parseInt(args[portIdx + 1], 10);
+        }
+        await startDashboard(port);
+        return; 
       }
 
       default: {
