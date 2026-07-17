@@ -18,7 +18,7 @@ let stopping = false;
 let currentJob = null;
 let activeChildProcess = null;
 
-const logsDir = path.resolve(process.cwd(), 'logs');
+const logsDir = process.env.LOGS_PATH || path.resolve(process.cwd(), 'logs');
 if (!fs.existsSync(logsDir)) {
   fs.mkdirSync(logsDir, { recursive: true });
 }

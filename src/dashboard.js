@@ -1,15 +1,15 @@
 import express from 'express';
 import fs from 'fs';
 import path from 'path';
-import { 
-  initDb, 
-  getDb, 
-  enqueueJob, 
-  getJob, 
-  updateJobStatus, 
-  listJobs, 
+import {
+  initDb,
+  getDb,
+  enqueueJob,
+  getJob,
+  updateJobStatus,
+  listJobs,
   getJobSummary,
-  clearAll 
+  clearAll
 } from './db.js';
 
 function isPidRunning(pid) {
@@ -29,7 +29,7 @@ export async function startDashboard(port = 3000) {
     try {
       const summary = await getJobSummary();
       const db = getDb();
-      
+
       const workersRaw = await db.all(`SELECT * FROM workers`);
       const workers = [];
       for (const w of workersRaw) {
@@ -41,7 +41,7 @@ export async function startDashboard(port = 3000) {
       }
 
       const jobs = await db.all(`SELECT * FROM jobs ORDER BY updated_at DESC LIMIT 50`);
-      
+
       const configRows = await db.all(`SELECT * FROM config`);
       const config = {};
       configRows.forEach(row => {
@@ -61,7 +61,7 @@ export async function startDashboard(port = 3000) {
 
   app.post('/api/enqueue', async (req, res) => {
     const { id, command, max_retries, priority, run_in_seconds, timeout } = req.body;
-    
+
     if (!command) {
       return res.status(400).json({ error: 'Command is required' });
     }
@@ -105,8 +105,9 @@ export async function startDashboard(port = 3000) {
 
   app.get('/api/logs/:id', (req, res) => {
     const jobId = req.params.id;
-    const logPath = path.resolve(process.cwd(), 'logs', `job-${jobId}.log`);
-    
+    const logsDir = process.env.LOGS_PATH || path.resolve(process.cwd(), 'logs');
+    const logPath = path.join(logsDir, `job-${jobId}.log`);
+
     if (!fs.existsSync(logPath)) {
       return res.json({ logs: 'No logs found for this job execution.' });
     }
@@ -134,10 +135,10 @@ export async function startDashboard(port = 3000) {
   });
 
   app.listen(port, () => {
-    console.log(`\n======================================================`);
-    console.log(`🚀 QueueCTL Web Dashboard is active!`);
+    console.log(`\n`);
+    console.log(`QueueCTL Web Dashboard is active!`);
     console.log(`🔗 Address: \x1b[36mhttp://localhost:${port}\x1b[0m`);
-    console.log(`======================================================\n`);
+    console.log(`\n`);
   });
 }
 

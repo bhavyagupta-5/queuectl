@@ -1,7 +1,7 @@
 import sqlite3 from 'sqlite3';
 import path from 'path';
 
-const DB_FILE = path.resolve(process.cwd(), 'queue.db');
+const DB_FILE = process.env.DB_PATH || path.resolve(process.cwd(), 'queue.db');
 let dbInstance = null;
 
 export function getDb() {

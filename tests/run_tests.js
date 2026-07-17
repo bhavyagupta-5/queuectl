@@ -2,12 +2,12 @@ import { fork } from 'child_process';
 import path from 'path';
 import { fileURLToPath } from 'url';
 import fs from 'fs';
-import { 
-  initDb, 
-  getDb, 
-  enqueueJob, 
-  getJob, 
-  clearAll 
+import {
+  initDb,
+  getDb,
+  enqueueJob,
+  getJob,
+  clearAll
 } from '../src/db.js';
 import { setConfig } from '../src/config.js';
 
@@ -53,9 +53,9 @@ function stopWorkerProcess(child) {
 }
 
 async function runTests() {
-  console.log(`\n${colors.bright}${colors.cyan}======================================================`);
-  console.log(`🧪 RUNNING QUEUECTL AUTOMATED TEST SUITE`);
-  console.log(`======================================================${colors.reset}\n`);
+  console.log(`\n${colors.bright}${colors.cyan}`);
+  console.log(` RUNNING QUEUECTL AUTOMATED TEST SUITE`);
+  console.log(`{colors.reset}\n`);
 
 
   await initDb();
@@ -64,7 +64,7 @@ async function runTests() {
 
   let failedTests = 0;
 
-  
+
   try {
     console.log(`${colors.bright}[Test 1] Basic Job Completes Successfully...${colors.reset}`);
     await enqueueJob({
@@ -76,7 +76,7 @@ async function runTests() {
     });
 
     const worker = startWorkerProcess('worker-test-1');
-    
+
 
     let success = false;
     for (let i = 0; i < 50; i++) {
@@ -104,7 +104,7 @@ async function runTests() {
 
   try {
     console.log(`${colors.bright}[Test 2] Failed Job Retries with Backoff & Moves to DLQ...${colors.reset}`);
-   
+
     await enqueueJob({
       id: 'test-retry-dlq',
       command: 'nonexistentcommand1234',
@@ -112,9 +112,9 @@ async function runTests() {
       priority: 0,
       timeout: 0
     });
-    
-    
-    await setConfig('backoff-base', '1.5'); 
+
+
+    await setConfig('backoff-base', '1.5');
 
     const worker = startWorkerProcess('worker-test-2');
 
@@ -136,9 +136,9 @@ async function runTests() {
     await stopWorkerProcess(worker);
 
     if (reachedDeadState && attemptsCounted === 2) {
-      console.log(`${colors.green}✓ Test 2 Passed! Job failed, retried, and moved to DLQ.${colors.reset}\n`);
+      console.log(`${colors.green}Test 2 Passed! Job failed, retried, and moved to DLQ.${colors.reset}\n`);
     } else {
-      console.log(`${colors.red}✗ Test 2 Failed! Expected dead state with 2 attempts, got state: ${reachedDeadState ? 'dead' : 'not dead'} and attempts: ${attemptsCounted}.${colors.reset}\n`);
+      console.log(`${colors.red}Test 2 Failed! Expected dead state with 2 attempts, got state: ${reachedDeadState ? 'dead' : 'not dead'} and attempts: ${attemptsCounted}.${colors.reset}\n`);
       failedTests++;
     }
   } catch (err) {
@@ -175,7 +175,7 @@ async function runTests() {
       await sleep(200);
       let finishedCount = 0;
       jobRecords = [];
-      
+
       for (const id of jobIds) {
         const j = await getJob(id);
         if (j) {
@@ -198,15 +198,15 @@ async function runTests() {
 
     const workerAssignments = jobRecords.map(j => j.worker_id);
     const uniqueWorkers = new Set(workerAssignments.filter(Boolean));
-    
-   
+
+
     const hasMultipleWorkers = uniqueWorkers.size > 1;
     const noDuplicates = jobRecords.every(j => j.attempts === 1);
 
     if (allFinished && hasMultipleWorkers && noDuplicates) {
-      console.log(`${colors.green}✓ Test 3 Passed! Jobs were parallelized across ${uniqueWorkers.size} workers with no overlap.${colors.reset}\n`);
+      console.log(`${colors.green} Test 3 Passed! Jobs were parallelized across ${uniqueWorkers.size} workers with no overlap.${colors.reset}\n`);
     } else {
-      console.log(`${colors.red}✗ Test 3 Failed! Finished: ${allFinished}, Workers involved: ${uniqueWorkers.size}, No duplicate executions check: ${noDuplicates}.${colors.reset}\n`);
+      console.log(`${colors.red} Test 3 Failed! Finished: ${allFinished}, Workers involved: ${uniqueWorkers.size}, No duplicate executions check: ${noDuplicates}.${colors.reset}\n`);
       failedTests++;
     }
   } catch (err) {
@@ -219,13 +219,13 @@ async function runTests() {
     await clearAll();
     await initDb();
 
-    
+
     await enqueueJob({
       id: 'test-timeout',
       command: 'sleep 5',
-      max_retries: 1, 
+      max_retries: 1,
       priority: 0,
-      timeout: 1 
+      timeout: 1
     });
 
     const worker = startWorkerProcess('worker-test-4');
@@ -246,9 +246,9 @@ async function runTests() {
     await stopWorkerProcess(worker);
 
     if (isDead && errorMessage === 'TIMEOUT_ERROR') {
-      console.log(`${colors.green}✓ Test 4 Passed! Job timed out after 1s, was terminated and moved to DLQ.${colors.reset}\n`);
+      console.log(`${colors.green}Test 4 Passed! Job timed out after 1s, was terminated and moved to DLQ.${colors.reset}\n`);
     } else {
-      console.log(`${colors.red}✗ Test 4 Failed! IsDead: ${isDead}, Error message: ${errorMessage}.${colors.reset}\n`);
+      console.log(`${colors.red} Test 4 Failed! IsDead: ${isDead}, Error message: ${errorMessage}.${colors.reset}\n`);
       failedTests++;
     }
   } catch (err) {
@@ -256,7 +256,7 @@ async function runTests() {
     failedTests++;
   }
 
-  
+
   try {
     console.log(`${colors.bright}[Test 5] Job Persistence Across Worker Restarts...${colors.reset}`);
     await clearAll();
@@ -275,7 +275,7 @@ async function runTests() {
     const isPendingInitially = job && job.state === 'pending';
 
     const worker = startWorkerProcess('worker-test-5');
-    
+
     let isCompleted = false;
     for (let i = 0; i < 30; i++) {
       await sleep(100);
@@ -289,9 +289,9 @@ async function runTests() {
     await stopWorkerProcess(worker);
 
     if (isPendingInitially && isCompleted) {
-      console.log(`${colors.green}✓ Test 5 Passed! Job survived restarts and executed successfully.${colors.reset}\n`);
+      console.log(`${colors.green}Test 5 Passed! Job survived restarts and executed successfully.${colors.reset}\n`);
     } else {
-      console.log(`${colors.red}✗ Test 5 Failed! Initial Pending: ${isPendingInitially}, Completed: ${isCompleted}.${colors.reset}\n`);
+      console.log(`${colors.red}Test 5 Failed! Initial Pending: ${isPendingInitially}, Completed: ${isCompleted}.${colors.reset}\n`);
       failedTests++;
     }
   } catch (err) {
@@ -303,17 +303,17 @@ async function runTests() {
   spawnedPids.forEach(pid => {
     try {
       process.kill(pid, 'SIGKILL');
-    } catch (e) {}
+    } catch (e) { }
   });
 
-  console.log(`======================================================`);
+  console.log(``);
   if (failedTests === 0) {
-    console.log(`${colors.green}${colors.bright}🎉 ALL TESTS PASSED SUCCESSFULLY!${colors.reset}`);
+    console.log(`${colors.green}${colors.bright} ALL TESTS PASSED SUCCESSFULLY!${colors.reset}`);
   } else {
-    console.log(`${colors.red}${colors.bright}🚨 TEST SUITE FAILED WITH ${failedTests} FAILURE(S)${colors.reset}`);
+    console.log(`${colors.red}${colors.bright} TEST SUITE FAILED WITH ${failedTests} FAILURE(S)${colors.reset}`);
     process.exit(1);
   }
-  console.log(`======================================================\n`);
+  console.log(`\n`);
   process.exit(0);
 }
 

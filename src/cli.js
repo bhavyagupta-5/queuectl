@@ -1,4 +1,4 @@
-#!/usr/bin/env node
+
 import path from 'path';
 import { fileURLToPath } from 'url';
 import { fork } from 'child_process';
