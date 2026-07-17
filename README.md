@@ -1,32 +1,32 @@
 # QueueCTL - Background Job Queue System
 
-QueueCTL is a production-grade, CLI-based background job queue system built in Node.js. It manages background job execution with worker processes, handles job retries using exponential backoff, stores job states in a persistent SQLite database (ensuring ACID compliance and lock-safe concurrent polling), and routes permanently failing jobs to a Dead Letter Queue (DLQ).
+QueueCTL is a CLI-based background job queue system built in Node.js. It manages background job execution with worker processes, handles job retries using exponential backoff, stores job states in a persistent SQLite database, and routes permanently failing jobs to a Dead Letter Queue (DLQ).
 
 ---
 
-##  Key Features
+## Key Features
 
 *   **Persistent Storage**: Job data survives system restarts using an embedded SQLite database (`queue.db`).
-*   **Concurrency & Locking**: Multiple workers run in parallel without duplicate job processing, coordinated atomically via SQLite `BEGIN IMMEDIATE TRANSACTION` blocks.
-*   **Automatic Retries**: Failed jobs automatically retry based on configurable exponential backoff calculations (`delay = base ^ attempts seconds`).
-*   **Dead Letter Queue (DLQ)**: Jobs exceeding maximum retries are transitioned to the `dead` state (DLQ) for manual inspection and retrial.
-*   **Graceful Shutdown**: Workers capture termination signals (`SIGTERM`, `SIGINT`) and finish their current active job before exiting safely.
+*   **Concurrency and Locking**: Multiple workers run in parallel without duplicate job processing, coordinated atomically via SQLite transaction locks.
+*   **Automatic Retries**: Failed jobs automatically retry based on configurable exponential backoff calculations.
+*   **Dead Letter Queue (DLQ)**: Jobs exceeding maximum retries are transitioned to the dead state for manual inspection and retrial.
+*   **Graceful Shutdown**: Workers capture termination signals and finish their current active job before exiting safely.
 *   **Dynamic Configurations**: Configure retry limits, backoff bases, and job timeouts dynamically via the CLI.
-*   **Job Timeout Handling (Bonus)**: Limit maximum execution time per job. If a job times out, it is safely terminated and flagged.
+*   **Job Timeout Handling**: Limit maximum execution time per job. If a job times out, it is safely terminated and flagged.
 
 ---
 
-## 🛠️ Tech Stack
+## Tech Stack
 
 *   **Runtime**: Node.js (v18+) using ES Modules
 *   **Database**: SQLite (`sqlite3`)
-*   **Process Orchestration**: Native Node `child_process` (forking detached daemons, signal signaling, stdout/stderr streaming)
+*   **Process Orchestration**: Native Node child_process module
 
 ---
 
-## ⚙️ Installation & Setup
+## Installation and Setup
 
-1.  **Clone / Navigate** to the project workspace directory.
+1.  **Navigate** to the project directory.
 2.  **Install dependencies**:
     ```bash
     npm install
@@ -35,11 +35,10 @@ QueueCTL is a production-grade, CLI-based background job queue system built in N
     ```bash
     npm link
     ```
-    *(Note: This creates a global symlink, allowing you to run `queuectl` from anywhere on your machine).*
 
 ---
 
-## 📖 CLI Usage & Commands
+## CLI Usage and Commands
 
 Run `queuectl --help` to print the command reference:
 
@@ -65,14 +64,13 @@ Add a job by providing its details as a JSON string:
     *   `id` (string): Unique identifier (auto-generated UUID if omitted).
     *   `command` (string, required): Shell command to execute.
     *   `max_retries` (number): Max retries (falls back to global config if omitted).
-    *   `priority` (number): Execution priority (higher priority runs first, default is `0`).
+    *   `priority` (number): Execution priority (higher priority runs first, default is 0).
     *   `run_at` (string): ISO datetime string to schedule delayed execution.
-    *   `timeout` (number): Maximum runtime in seconds (default is `0`, infinite).
+    *   `timeout` (number): Maximum runtime in seconds (default is 0, infinite).
 
 ### 2. Manage Workers
 Start background worker processes:
 ```bash
-# Start 3 background worker processes
 queuectl worker start --count 3
 ```
 
@@ -80,7 +78,6 @@ Stop background workers gracefully:
 ```bash
 queuectl worker stop
 ```
-*Workers will capture the `SIGTERM` signal, wait for their current running command to complete, update the database, and exit.*
 
 ### 3. Check Queue Status
 Show status aggregates and active worker metadata:
@@ -89,12 +86,10 @@ queuectl status
 ```
 
 ### 4. List Jobs
-List jobs currently in the database, with optional state filters (`pending`, `processing`, `completed`, `failed`, `dead`):
+List jobs currently in the database, with optional state filters (pending, processing, completed, failed, dead):
 ```bash
-# List all jobs
 queuectl list
 
-# List pending jobs
 queuectl list --state pending
 ```
 
@@ -106,44 +101,37 @@ queuectl dlq list
 
 Retry a specific dead job or all dead jobs:
 ```bash
-# Retry job by ID
 queuectl dlq retry job1
 
-# Retry all dead jobs in the DLQ
 queuectl dlq retry all
 ```
 
 ### 6. Manage Configuration
 Set global variables stored persistently:
 ```bash
-# Change max retries
 queuectl config set max-retries 5
 
-# Change backoff base multiplier
 queuectl config set backoff-base 2
 
-# Change default timeout (seconds)
 queuectl config set default-timeout 10
 ```
 
 ### 7. Start Web Dashboard
-Start the clean monitoring Web UI:
+Start the monitoring Web UI:
 ```bash
-# Start dashboard on port 3000 (default)
 queuectl dashboard
 
-# Start dashboard on a custom port
 queuectl dashboard --port 8080
 ```
 Open your browser to `http://localhost:3000` to view active workers, status charts, execution history, read job execution logs, trigger retries for dead jobs, and enqueue new jobs directly from the UI.
 
 ---
 
-## 🏗️ Architecture & Internals
+## Architecture and Internals
 
 ### 1. Concurrency Locking
 To prevent duplicate job execution when multiple workers poll the database, SQLite's transactional locks are used.
-Inside `src/db.js`, `fetchNextJob` wraps the SELECT and UPDATE queries in a `BEGIN IMMEDIATE TRANSACTION`. This locks the database file for writing immediately, preventing any other process from selecting and claiming the same job.
+Inside `src/db.js`, the query wraps the SELECT and UPDATE commands in a `BEGIN IMMEDIATE TRANSACTION` block. This locks the database file for writing immediately, preventing any other process from selecting and claiming the same job.
 
 ### 2. Job Lifecycle State Machine
 
@@ -176,16 +164,15 @@ Inside `src/db.js`, `fetchNextJob` wraps the SELECT and UPDATE queries in a `BEG
    └─────────────┘
 ```
 
-### 3. Heartbeats & Crashed Worker Recovery
-Each worker process updates its heartbeat timestamp in the `workers` table every 3 seconds.
-Whenever a worker polls, it scans for inactive workers (heartbeat older than 15 seconds) and cleans them up. If a crashed worker had an active job marked as `processing`, the recovery step resets the job's state back to `failed` so it can be reclaimed and retried by other workers.
+### 3. Heartbeats and Crashed Worker Recovery
+Each worker process updates its heartbeat timestamp in the database every 3 seconds.
+Whenever a worker polls, it scans for inactive workers (heartbeats older than 15 seconds) and cleans them up. If a crashed worker had an active job marked as processing, the recovery step resets the job's state back to failed so it can be reclaimed and retried by other workers.
 
 ---
 
-## 🧪 Testing Instructions
+## Testing Instructions
 
-Run the automated test suite to verify all required scenarios (including locking, backoff, DLQ, persistence, and timeouts):
+Run the automated test suite to verify all required scenarios:
 ```bash
 npm test
 ```
-The test suite spins up dummy worker processes, enqueues specific jobs, asserts state changes in the database, verifies parallel worker division (non-overlapping), validates timeout terminations, and handles teardown automatically.
