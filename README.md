@@ -57,7 +57,7 @@ Add a job by providing its details as a JSON string:
 
 * **Windows PowerShell**:
   ```powershell
-  queuectl enqueue '{"id": "job1", "command": "sleep 2 && echo Hello World", "max_retries": 3, "priority": 10}'
+  queuectl enqueue '{\"id\": \"job1\", \"command\": \"sleep 2 && echo Hello World\", \"max_retries\": 3, \"priority\": 10}'
   ```
 
 *   **Optional JSON properties**:
