@@ -4,7 +4,7 @@ QueueCTL is a production-grade, CLI-based background job queue system built in N
 
 ---
 
-## 🚀 Key Features
+##  Key Features
 
 *   **Persistent Storage**: Job data survives system restarts using an embedded SQLite database (`queue.db`).
 *   **Concurrency & Locking**: Multiple workers run in parallel without duplicate job processing, coordinated atomically via SQLite `BEGIN IMMEDIATE TRANSACTION` blocks.
@@ -44,10 +44,23 @@ QueueCTL is a production-grade, CLI-based background job queue system built in N
 Run `queuectl --help` to print the command reference:
 
 ### 1. Enqueue Jobs
-Add a job by providing its details as a JSON string.
-```bash
-queuectl enqueue '{"id": "job1", "command": "sleep 2 && echo Hello World", "max_retries": 3, "priority": 10}'
-```
+Add a job by providing its details as a JSON string:
+
+* **macOS / Linux**:
+  ```bash
+  queuectl enqueue '{"id": "job1", "command": "sleep 2 && echo Hello World", "max_retries": 3, "priority": 10}'
+  ```
+
+* **Windows Command Prompt (cmd.exe)**:
+  ```cmd
+  queuectl enqueue "{\"id\": \"job1\", \"command\": \"sleep 2 && echo Hello World\", \"max_retries\": 3, \"priority\": 10}"
+  ```
+
+* **Windows PowerShell**:
+  ```powershell
+  queuectl enqueue '{"id": "job1", "command": "sleep 2 && echo Hello World", "max_retries": 3, "priority": 10}'
+  ```
+
 *   **Optional JSON properties**:
     *   `id` (string): Unique identifier (auto-generated UUID if omitted).
     *   `command` (string, required): Shell command to execute.
